@@ -1,0 +1,32 @@
+from flask import Flask, request, jsonify
+import random
+import string
+
+app = Flask(__name__)
+
+# Хранилище ключей (в реальном проекте используй БД)
+keys = {}
+
+# Функция генерации ключа
+def generate_key():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+
+@app.route("/generate", methods=["POST"])
+def generate():
+    hwid = request.json.get("hwid")
+    if not hwid:
+        return jsonify({"error": "HWID is required"}), 400
+    key = generate_key()
+    keys[key] = hwid
+    return jsonify({"key": key})
+
+@app.route("/verify", methods=["POST"])
+def verify():
+    key = request.json.get("key")
+    hwid = request.json.get("hwid")
+    if key in keys and keys[key] == hwid:
+        return jsonify({"status": "valid"})
+    return jsonify({"status": "invalid"}), 401
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
